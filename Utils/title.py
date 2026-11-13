@@ -21,7 +21,7 @@ def render_tagline():
 
     st.markdown("""
         <h3 style='font-family:"Poppins"; color:#B22222; font-size: 28px; font-weight: 400; margin-top:-15px;'>
-            AI-Powered Wellfare Platform
+            AI-Comapanion That Remembers You
         </h3>
     """, unsafe_allow_html=True)
 
