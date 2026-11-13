@@ -84,6 +84,6 @@ def render_footer():
         <a href="https://github.com/Suvroneel" target="_blank">Contact</a>
     </div>
     <p>© 2025 <span class="project">Project Phynix</span></p>
-    <p class="tagline">AI-Powered Mood & Career Tracking Platform</p>
+    
 </div>
     """, unsafe_allow_html=True)
