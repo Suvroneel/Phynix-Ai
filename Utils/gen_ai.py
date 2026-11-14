@@ -1,43 +1,50 @@
 """
 GenAI Backend for Phynix Mental Health Chatbot
 Integrates with BERT emotion detection for empathetic responses
-Uses Hugging Face Inference API with multiple model support
+Uses OpenRouter with verified November 2026 free models
 """
 
-from huggingface_hub import InferenceClient
+from openai import OpenAI
 import streamlit as st
 
 
 class PhynixAI:
-    def __init__(self, hf_token=None):
+    def __init__(self, api_key=None):
         """
-        Initialize the GenAI model with Hugging Face Inference API
-        
-       
+        Initialize the GenAI client with OpenRouter.
+        The key comes from the parameter or from Streamlit secrets.
         """
-        # Get token from Streamlit secrets or parameter
-        if hf_token:
-            self.hf_token = hf_token
+        if api_key:
+            self.api_key = api_key
         else:
             try:
-                # Try both possible secret names
-                self.hf_token = st.secrets.get("HF_TOKEN") or st.secrets.get("HUGGINGFACE_TOKEN")
-            except:
-                self.hf_token = None
-                print("Warning: No HF token found. App will work but with lower rate limits.")
-        
-        # Initialize client with token
-        self.client = InferenceClient(token=self.hf_token)
-        
-        # Available models - verified working as of Jan 2025
+                self.api_key = st.secrets.get("OPENROUTER_API_KEY")
+            except Exception:
+                self.api_key = None
+                print("Warning: No OPENROUTER_API_KEY found.")
+
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=self.api_key,
+            timeout=30,
+            default_headers={
+                "HTTP-Referer": "https://phynix.streamlit.app",
+                "X-Title": "Phynix",
+            },
+        )
+
+        # Verified active free models on OpenRouter (Nov 2026, zero NVIDIA)
         self.available_models = {
-            "llama": "meta-llama/Llama-3.1-8B-Instruct",
-            
+            "ernie": "baidu/ernie-5.5-flash-preview:free",
+            "ling": "inclusionai/ling-3.2-flash:free",
+            "gemma": "google/gemma-4-31b-it:free",
+            "dots": "dots-studio/dots-3-note-preview:free",
+            "auto": "openrouter/free",
         }
-        
-        # Default model 
-        self.current_model = self.available_models["llama"]
-        
+
+        # Default model: ERNIE 5.5 Flash (fast, newly added, low 429 congestion)
+        self.current_model = self.available_models["ernie"]
+
         # System prompt for mental health context
         self.system_prompt = """You are Ashva, a compassionate AI companion within the Phynix mental health platform. Your role is to:
 - Listen empathetically and validate emotions
@@ -47,121 +54,107 @@ class PhynixAI:
 - Encourage professional help for serious concerns
 - Keep responses conversational and warm (2-4 sentences typically)
 - Use a caring, understanding tone"""
-    
+
     def set_model(self, model_name):
         """Change the active GenAI model"""
         if model_name in self.available_models:
             self.current_model = self.available_models[model_name]
             return True
         return False
-    
+
+    def _model_chain(self):
+        """Selected model first, then remaining free models, ending with openrouter/free."""
+        others = [
+            m for m in self.available_models.values()
+            if m != self.current_model and m != "openrouter/free"
+        ]
+        chain = [self.current_model] + others
+        if self.current_model != "openrouter/free":
+            chain.append("openrouter/free")
+        return chain
+
+    def _call(self, model, messages, max_tokens, temperature):
+        response = self.client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            extra_body={
+                # Prevents hybrid reasoning models from burning hidden thinking tokens
+                "reasoning": {"effort": "none"}
+            },
+        )
+        return (response.choices[0].message.content or "").strip()
+
+    @staticmethod
+    def _merge_system_into_user(messages):
+        """For models that reject the system role: fold it into the first user message."""
+        system_text = messages[0]["content"]
+        rest = [dict(m) for m in messages[1:]]
+        for m in rest:
+            if m["role"] == "user":
+                m["content"] = f"{system_text}\n\n{m['content']}"
+                break
+        return rest
+
     def generate_response(
-        self, 
-        user_message, 
-        detected_emotion=None, 
+        self,
+        user_message,
+        detected_emotion=None,
         risk_level=None,
-        chat_history=None, 
-        max_tokens=300, 
-        temperature=0.7
+        chat_history=None,
+        max_tokens=300,
+        temperature=0.7,
     ):
         """
-        Generate empathetic AI response based on user input and emotion context
-        
-        Args:
-            user_message: User's input text
-            detected_emotion: Emotion detected by BERT (e.g., "sadness", "joy")
-            risk_level: Risk level from emotion analysis (e.g., "High", "Low")
-            chat_history: List of previous messages for context
-            max_tokens: Maximum response length
-            temperature: Creativity level (0.0-1.0)
-        
-        Returns:
-            AI generated response text
+        Generate empathetic AI response based on user input and emotion context.
+        Tries the user's selected model first, then falls back cleanly across active free tiers.
         """
-        try:
-            # Build context-aware prompt
-            emotion_context = ""
-            if detected_emotion and risk_level:
-                emotion_context = f"\n[Context: User's detected emotion is '{detected_emotion}' with {risk_level} risk level. Respond with appropriate empathy and care.]"
-            
-            # Prepare messages with system prompt
-            messages = [
-                {"role": "system", "content": self.system_prompt + emotion_context}
-            ]
-            
-            # Add chat history if provided
-            if chat_history:
-                messages.extend(chat_history)
-            
-            # Add current user message
-            messages.append({
-                "role": "user",
-                "content": user_message
-            })
-            
-            # Generate response using Inference API
-            response = self.client.chat_completion(
-                model=self.current_model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
+        emotion_context = ""
+        if detected_emotion and risk_level:
+            emotion_context = (
+                f"\n[Context: User's detected emotion is '{detected_emotion}' "
+                f"with {risk_level} risk level. Respond with appropriate empathy and care.]"
             )
-            
-            # Extract the response text
-            ai_response = response.choices[0].message.content
-            
-            # Clean up response (remove any system artifacts)
-            ai_response = ai_response.strip()
-            
-            return ai_response
-            
-        except Exception as e:
-            # Fallback error handling
-            error_msg = str(e)
-            if "rate limit" in error_msg.lower():
-                return "I'm experiencing high demand right now. Could you try again in a moment?"
-            elif "model" in error_msg.lower():
-                return "I'm having trouble connecting right now. Please try switching models or check back soon."
-            else:
-                return f"I'm having a technical issue. Please try again. (Error: {error_msg[:50]})"
-    
+
+        messages = [
+            {"role": "system", "content": self.system_prompt + emotion_context}
+        ]
+        if chat_history:
+            messages.extend(chat_history)
+        messages.append({"role": "user", "content": user_message})
+
+        last_error = ""
+        for model in self._model_chain():
+            try:
+                reply = self._call(model, messages, max_tokens, temperature)
+                if reply:
+                    return reply
+            except Exception as e:
+                last_error = str(e)
+                print(f"[OpenRouter] {model} failed: {last_error[:200]}")
+
+                # Only retry the SAME model if it's a 400 (system prompt unsupported).
+                # For 404/429/403, immediately move to the next model in the chain.
+                if "400" in last_error:
+                    try:
+                        merged = self._merge_system_into_user(messages)
+                        reply = self._call(model, merged, max_tokens, temperature)
+                        if reply:
+                            return reply
+                    except Exception as e2:
+                        last_error = str(e2)
+                        print(f"[OpenRouter] {model} retry failed: {last_error[:200]}")
+
+        return f"DEBUG ERROR: {last_error[:300] or 'all models returned an empty reply'}"
+
     def get_model_info(self):
         """Return current model information"""
         return {
             "current": self.current_model,
-            "available": list(self.available_models.keys())
+            "available": list(self.available_models.keys()),
         }
-    
+
     def is_token_configured(self):
-        """Check if HF token is configured"""
-        return self.hf_token is not None
-
-
-
-"""
-=== WHAT THIS FILE DOES ===
-
-This is the GenAI backend for Phynix that replaces hard-coded responses with AI-generated replies.
-
-KEY COMPONENTS:
-1. PhynixAI class - Main AI interface
-2. 5 Hugging Face models - Llama, Mistral, Zephyr, Phi, Gemma (user can switch)
-3. Mental health system prompt - Makes AI respond empathetically
-4. Emotion context integration - AI knows user's emotion + risk level from BERT
-
-HOW IT WORKS:
-- User message + BERT emotion + risk level → GenAI model
-- AI generates personalized, context-aware response (not random template!)
-- Returns empathetic reply that matches user's emotional state
-
-WHY WE USE THIS:
-- Fluid, natural conversations instead of repetitive hard-coded replies
-- AI adjusts tone based on emotion (more caring for sadness, upbeat for joy)
-- Each response is unique and contextual
-- Maintains conversation history for coherent dialogue
-
-INTEGRATION:
-- Called by chat_genai.py after BERT detects emotion
-- Works with or without HF token (token gives better rate limits)
-- Handles errors gracefully with user-friendly fallback messages
-"""
+        """Check if the OpenRouter key is configured"""
+        return self.api_key is not None
