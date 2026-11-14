@@ -24,3 +24,6 @@ streamlit-supabase-auth
 #RAG / vectordb
 pinecone>=3.0.0
 sentence-transformers>=2.2.0
+
+#openai
+openai>=1.30.0
