@@ -1,7 +1,7 @@
 """
 GenAI Backend for Phynix Mental Health Chatbot
 Integrates with BERT emotion detection for empathetic responses
-Uses OpenRouter with verified November 2026 free models
+Uses OpenRouter with verified November 2026 free models and graceful traffic handling
 """
 
 from openai import OpenAI
@@ -146,7 +146,11 @@ class PhynixAI:
                         last_error = str(e2)
                         print(f"[OpenRouter] {model} retry failed: {last_error[:200]}")
 
-        return f"DEBUG ERROR: {last_error[:300] or 'all models returned an empty reply'}"
+        # Graceful fallback for Product Hunt launch traffic / rate limits
+        if "429" in last_error or "rate" in last_error.lower() or "quota" in last_error.lower():
+            return "Our AI servers are experiencing high traffic right now as we celebrate the launch! Ashva's daily free reflection quota is taking a quick breather. Please check back tomorrow or explore the mood journal!"
+
+        return "Ashva is resting right now due to heavy traffic. Please try again in a little while!"
 
     def get_model_info(self):
         """Return current model information"""
