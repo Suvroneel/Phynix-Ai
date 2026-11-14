@@ -14,6 +14,8 @@ This platform is **multi-page**, **multi-layered**, and production-ready, combin
 ---
 
 ## 🆕 Recent Updates
+### v2.3 - OpenRouter Backend Migration - November 2026
+Migrated Ashva's generative AI backend from the Hugging Face Inference API to OpenRouter to ensure high availability and eliminate rate-limit roadblocks. Updated the integration to support active free models (such as Baidu ERNIE 5.5 Flash, Google Gemma 4, and inclusionAI Ling 3.2 Flash) with dynamic fallback routing, zero em dashes, and robust error handling.
 
 ### v2.2 - RAG Memory Engine + pgvector - April 2026
 Ashva now actually remembers you. Not just your last emotion, but real context from both your past conversations and diary entries. Built a unified RAG pipeline using pgvector on Supabase PostgreSQL with sentence-transformers (all-MiniLM-L6-v2) for semantic embeddings. Every chat message and diary entry gets embedded and stored in a vector store. When you return, Ashva retrieves the most semantically relevant memories across both sources and uses them to generate a genuinely personal welcome, powered by the LLM. The more you talk and write, the more Ashva actually knows you. Falls back to emotion-based greeting if no embeddings exist yet, and a generic welcome for brand new users. This is what "the more you talk to it, the more it becomes YOURS" actually means under the hood.
