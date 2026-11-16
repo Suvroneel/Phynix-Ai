@@ -1,6 +1,19 @@
 # Phynix Ai
 
-> *The more you talk to it, the more it becomes YOURS.*
+<br>
+
+<a href="https://www.producthunt.com/products/ashva?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank">
+  <img src="https://ph-files.imgix.net/dd7b14ef-438d-4b6a-93de-3cf1752a3231.png?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=120&w=120" align="left" width="88" />
+</a>
+
+### Ashva
+An AI companion that remembers what you said
+
+<a href="https://www.producthunt.com/products/ashva?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank">
+  <img src="https://img.shields.io/badge/Check%20it%20out%20on%20Product%20Hunt%20%E2%86%92-FF6154?style=for-the-badge&logo=producthunt&logoColor=white" alt="Check it out on Product Hunt" />
+</a>
+
+<br clear="left">
 
 Most AI talks at you. Phynix grows with you. It remembers how you felt last session, notices your patterns over time, and meets you where you actually are instead of starting from zero every single time.
 
