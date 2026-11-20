@@ -9,6 +9,10 @@
 ### Ashva
 An AI companion that remembers what you said
 
+<img width="1920" height="1080" alt="Phynix AI" src="https://github.com/user-attachments/assets/b75f37d6-2b68-44a7-9d44-7e42010ce526" />
+
+
+
 <a href="https://www.producthunt.com/products/ashva?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank">
   <img src="https://img.shields.io/badge/Check%20it%20out%20on%20Product%20Hunt%20%E2%86%92-FF6154?style=for-the-badge&logo=producthunt&logoColor=white" alt="Check it out on Product Hunt" />
 </a>
