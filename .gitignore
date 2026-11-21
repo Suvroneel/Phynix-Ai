@@ -1,6 +1,6 @@
  .env
 
-Utils/.streamlit/secrets.toml
+.streamlit/secrets.toml
 
 hf_cache/
 

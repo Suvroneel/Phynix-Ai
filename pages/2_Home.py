@@ -1,12 +1,6 @@
-# Updated Home Page Code for Project Phynix (with restored sections)
-
-# 1. Install and Import Dependencies
 import random
-
 import streamlit as st
-from supabase import create_client, Client, ClientOptions
-
-# Custom modules
+from Utils.auth_guard import require_google_auth, get_supabase_service
 from Utils import title
 from Utils.Progression_Chart import show_last_chat_metrics, session_progress
 from Utils.advice import free_advice
@@ -14,48 +8,32 @@ from Utils.ashva import ashva_insights
 from Utils.sidebar import render_sidebar_logo
 from Utils.title import render_main_title, new_tagline, render_custom_header
 
-# 2. Setup Supabase
-supabase_url = st.secrets['SUPABASE_URL']
-supabase_key = st.secrets['SUPABASE_KEY']
-supabase: Client = create_client(supabase_url, supabase_key, options=ClientOptions(postgrest_client_timeout=60))
+# Authentication & Supabase service client
+require_google_auth()
+supabase = get_supabase_service()
 
-# 3. Restore Session
+# Restore Session
 render_sidebar_logo()
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Authentication
-if "access_token" in st.session_state and "refresh_token" in st.session_state:
-    try:
-        supabase.auth.set_session(st.session_state["access_token"], st.session_state["refresh_token"])
-    except Exception as e:
-        st.error(f"Failed to set session: {str(e)}")
-        st.switch_page("Logout.py")
-else:
-    st.error("No valid user token. Please log in again.")
-    st.switch_page("Logout.py")
-
-if "user_email" not in st.session_state:
-    st.error("You are not logged in. Redirecting to login...")
-    st.switch_page("Logout.py")
-
-# 4. Top Disclaimer
+# Top Disclaimer
 st.markdown("""
-    <div style='text-align: center; padding: 8px; font-size: 13px; color: #58d68d;'>
-        ⚠️ Not a substitute for professional mental health advice. Consult a professional if needed.
+    <div style='text-align: center; padding: 8px; font-size: 13px; color: #0000FF;'>
+        ✨A brand new chapter, You_AI, is in active development right now ✨
     </div>
 """, unsafe_allow_html=True)
 
-# 5. Title and Tagline
+# Title and Tagline
 col1, col2 = st.columns([1, 4])
 with col1:
-    st.image('images/sigmund-ljJDx95-6gE-unsplash.png', use_container_width=True, width=100)
+    st.image("images/sigmund-ljJDx95-6gE-unsplash.png", use_container_width=True, width=100)
 with col2:
     render_main_title()
 
 new_tagline()
 
-# 6. Welcome message
+# Welcome message
 st.markdown("<div style='margin-top: 110px;'></div>", unsafe_allow_html=True)
 title.render_welcome_message(st.session_state["username"])
 
@@ -81,7 +59,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 7. Stylish "Begin Your Journey" Button Centered
+# "Begin Your Journey" Button Centered
 st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns([2, 1, 2])
 with col2:
@@ -125,8 +103,6 @@ render_custom_header("Your Daily Free Advice")
 st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
 quote = random.choice(free_advice["bhagavad_gita"])
 
-# Inject custom CSS once (place near top of your app)
-# Custom CSS injection (place this once near the top of your Streamlit app)
 st.markdown("""
     <style>
         .quote-box {
@@ -149,7 +125,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Render the quote using HTML block
 st.markdown(f"""
 <div class="quote-box">
   <p class="quote-text">“{quote}”</p>
@@ -160,18 +135,13 @@ st.markdown("<div style='margin-top: 60px;'></div>", unsafe_allow_html=True)
 
 # Reflection Space
 render_custom_header("Ashva Insights")
-
-context_summary = "You've mentioned sleep a few times this week."
-# raag_output = "It might help to wind down with less screen time before bed. Would you like some suggestions?"
-
-ashva_insights("calcutta75", "suvroneelnathak@gmail.com")
+ashva_insights(st.session_state["username"], st.session_state["user_email"])
 
 st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-# 9. Dashboard Section
-render_custom_header("Dashboard")
 
-show_last_chat_metrics("calcutta75")
+# Dashboard Section
+render_custom_header("Dashboard")
+show_last_chat_metrics(st.session_state["username"])
 
 st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-
 session_progress(st.session_state["username"])

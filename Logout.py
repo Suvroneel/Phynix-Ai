@@ -1,234 +1,143 @@
-import streamlit as st
 import re
-from Utils import title
-import postgrest.exceptions # type: ignore
-from supabase import create_client, Client # type: ignore
-
+import streamlit as st
+from Utils.auth_guard import get_supabase_service
 from Utils.footer import render_footer
 from Utils.sidebar import hide_sidebar, add_sidebar_tooltip
 from Utils.title import render_main_title, render_tagline
 
-#st.set_page_config(page_title=None, page_icon="images/sigmund-ljJDx95-6gE-unsplash.png", )
 st.set_page_config(
     page_title="Phynix_AI",
-    page_icon='images/icons/favicon.ico',
-    initial_sidebar_state="collapsed"
+    page_icon="images/icons/favicon.ico",
+    initial_sidebar_state="collapsed",
 )
-    # Sidebar
+
 hide_sidebar()
 add_sidebar_tooltip()
 
+supabase_service = get_supabase_service()
+
+
+@st.dialog("Welcome to Phynix")
+def setup_username_dialog(user_email: str):
+    st.write(f"Signed in as **{user_email}**")
+    st.write("Choose a display username to get started:")
+
+    suggested = re.sub(r"[^a-zA-Z0-9_]", "", user_email.split("@")[0]) or "friend"
+    new_username = st.text_input(
+        "Username (no spaces)",
+        value=suggested,
+        key="google_username_dialog",
+    )
+
+    if st.button("Continue to Phynix", use_container_width=True, type="primary"):
+        clean_name = new_username.strip()
+        if not clean_name:
+            st.error("Please enter a username.")
+        elif re.search(r"\s", clean_name):
+            st.error("Username cannot contain spaces.")
+        else:
+            try:
+                count_res = (
+                    supabase_service.table("user_credentials")
+                    .select("user_id", count="exact")
+                    .execute()
+                )
+                new_user_id = (count_res.count or 0) + 1
+
+                supabase_service.table("user_credentials").insert({
+                    "user_id": new_user_id,
+                    "email": user_email,
+                    "user_name": clean_name,
+                }).execute()
+
+                st.session_state["username"] = clean_name
+                st.session_state["user_email"] = user_email
+                st.session_state["logged_in"] = True
+                st.switch_page("pages/1_Chat.py")
+            except Exception as e:
+                st.error(f"Could not create profile: {e}")
+
+
+# Handle active Google OAuth session
+if getattr(st.user, "is_logged_in", False):
+    user_email = (st.user.email or "").strip().lower()
+    if user_email:
+        st.session_state["user_email"] = user_email
+        st.session_state["logged_in"] = True
+
+        try:
+            existing = (
+                supabase_service.table("user_credentials")
+                .select("user_name")
+                .eq("email", user_email)
+                .execute()
+            )
+            if existing.data:
+                st.session_state["username"] = existing.data[0]["user_name"]
+                st.switch_page("pages/1_Chat.py")
+            else:
+                setup_username_dialog(user_email)
+        except Exception as e:
+            st.error(f"Database connection error: {e}")
+
+# Header
 col1, col2 = st.columns([1, 4])
 with col1:
-    st.image('images/sigmund-ljJDx95-6gE-unsplash.png', use_container_width=True, width=100)
+    st.image("images/sigmund-ljJDx95-6gE-unsplash.png", use_container_width=True, width=100)
 with col2:
     render_main_title()
     render_tagline()
-# App Title + Footer Style
 
-# Inject custom CSS for button styling, footer style, and centered "or" divider
 st.markdown("""
     <style>
         .st-emotion-cache-yinll1 { display: none !important; }
-        .stButton > button {
-            width: 100%;  /* Match button width to text input */
-            text-align: center;  /* Center button text */
-            margin: 10px 0;  /* Add vertical spacing for buttons */
-        }
-        .google-button {
-            background-color: #4285F4;  /* Google blue */
-            color: white;
-            border: none;
-            transition: background-color 0.2s;
-        }
-        .google-button:hover {
-            background-color: #357ae8;  /* Darker blue on hover */
-        }
-        .or-divider {
-            display: flex;
-            align-items: center;
+        .login-card {
+            max-width: 440px;
+            margin: 48px auto 24px auto;
+            padding: 32px 28px;
+            border-radius: 14px;
+            border: 1px solid #f0e6df;
+            background: #ffffff;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
             text-align: center;
-            margin: 15px 0;
-            color: #555;
-            font-size: 14px;
             font-family: 'Inter', sans-serif;
         }
-        .or-divider::before,
-        .or-divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #ccc;
+        .login-card h3 {
+            margin: 0 0 8px 0;
+            font-weight: 600;
+            color: #222;
         }
-        .or-divider span {
-            padding: 0 10px;
+        .login-card p {
+            margin: 0 0 22px 0;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
         }
-        .form-box {
-            max-width: 500px;  /* Constrain form width for better alignment */
-            margin: 0 auto;  /* Center the form */
+        .stButton > button {
+            background: linear-gradient(90deg, #ff914d, #ff6e40);
+            color: white !important;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 14px rgba(255, 110, 64, 0.3);
+        }
+        .stButton > button:hover {
+            background: linear-gradient(90deg, #ff6e40, #ff914d);
+            color: white !important;
         }
     </style>
+    <div class="login-card">
+        <h3>Welcome to Phynix</h3>
+        <p>Sign in with your Google account to continue your conversations, memory, and daily reflections with Ashva.</p>
+    </div>
 """, unsafe_allow_html=True)
 
-# Supabase clients
-supabase_url = st.secrets['SUPABASE_URL']
-supabase_key = st.secrets['SUPABASE_KEY']
-supabase: Client = create_client(supabase_url, supabase_key)
+_, center_col, _ = st.columns([1.2, 2, 1.2])
+with center_col:
+    if st.button("Continue with Google", use_container_width=True):
+        st.login("google")
 
-# Service role client for bypassing RLS
-supabase_service_url = st.secrets['SUPABASE_URL']
-supabase_service_key = st.secrets['SUPABASE_SERVICE_KEY']
-supabase_service: Client = create_client(supabase_service_url, supabase_service_key)
-
-
-# Session storage
-@st.fragment()
-def store_session(user, session):
-    st.session_state["user"] = user
-    st.session_state["session"] = session
-    st.session_state["logged_in"] = True
-    st.session_state["user_email"] = user.email
-    st.session_state["username"] = user.user_metadata.get("display_name", user.email)
-
-
-# Insert into user_credentials
-@st.fragment()
-def insert_credentials(user_email, user_name):
-    try:
-        # Get current row count
-        response = supabase_service.table('user_credentials').select('user_id', count='exact').execute()
-        row_count = response.count if response.count is not None else 0
-        new_user_id = row_count + 1
-
-        # Insert with computed user_id
-        supabase_service.table('user_credentials').insert({
-            'user_id': new_user_id,
-            'email': user_email,
-            'user_name': user_name,
-        }).execute()
-    except postgrest.exceptions.APIError as e:
-        st.error(f"Error submitting credentials: {e.message}")
-    except Exception as e:
-        st.error(f"Connection error: {str(e)}")
-
-
-# Login
-@st.fragment()
-def login_user(email, password):
-    try:
-        response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        user = response.user
-        if user:
-            store_session(user, response.session)
-            st.session_state["access_token"] = response.session.access_token
-            st.session_state["refresh_token"] = response.session.refresh_token
-            st.session_state["logged_in"] = True
-            st.success("Login successful!")
-            st.switch_page("pages/1_Chat.py")
-            #st.switch_page("pages/1_Home - Project_Phynix.py")
-        st.error("Login failed. Please check your credentials.")
-        return None
-    except Exception as e:
-        st.error(f"Login failed: {e}")
-        return None
-
-
-# Signup
-@st.fragment()
-def create_account(email, password, username):
-    try:
-        response = supabase.auth.sign_up({
-            "email": email,
-            "password": password,
-            "options": {
-                "data": {
-                    "display_name": username
-                }
-            }
-        })
-        user = response.user
-        session = response.session
-        if user is not None:
-            store_session(user, session)
-            st.markdown(
-                f"""
-                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet">
-                <style>
-                .custom-welcome {{
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-                    font-size: 20px;
-                    font-weight: 400;
-                    color: #88E788;
-                    margin-bottom: 1rem;
-                }}
-                </style>
-                <div class="custom-welcome">Account Created Successfully, {username}.<br>Please check your email to verify your account.</div>
-                """,
-                unsafe_allow_html=True
-            )
-            try:
-                insert_credentials(email, username)
-            except Exception as e:
-                st.error(f"Insert failed: {e}")
-            st.write("Didn't receive the email? Check your spam folder or try again in a few minutes.")
-        else:
-            st.error("Signup failed. Supabase did not return a user.")
-    except Exception as e:
-        st.error(f"Signup failed: {e}")
-
-col1, col2 = st.columns([1, 4])  # Adjust column widths to push button to the right
-# Main UI
-
-
-
-
-tab1, tab2 = st.tabs([" Login", " Signup"])
-
-# Login Form
-with tab1:
-    with st.container():
-        st.markdown('<div class="form-box">', unsafe_allow_html=True)
-        st.subheader("Welcome back!")
-        contact_input_email = st.text_input("Email", key="user_email_input")
-        contact_input_password = st.text_input("Password", type="password", key="user_password", placeholder="")
-        if st.button("Login"):
-            if contact_input_email and contact_input_password:
-                if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", contact_input_email):
-                    login_user(contact_input_email, contact_input_password)
-                else:
-                    st.error("Invalid email format (e.g., name@domain.com)")
-            else:
-                st.error("Please complete all required fields before proceeding.")
-       # st.markdown('<div class="or-divider"><span>or</span></div>', unsafe_allow_html=True)
-
-        #if st.button("Login with Google"):
-            #st.info("Under development")
-
-# Signup Form
-with tab2:
-    with st.container():
-        st.markdown('<div class="form-box">', unsafe_allow_html=True)
-        st.subheader("Create an Account")
-        new_username = st.text_input("Username (no white spaces) :red[*]", key="signup_username")
-        new_email = st.text_input("Email", key="signup_email")
-        new_password = st.text_input("Password :red[*]", type="password", key="new_password")
-        confirm_password = st.text_input("Confirm Password :red[*]", type="password", key="confirm_password")
-        if st.button("Verify Your Email"):
-            if not all([new_username, new_email, new_password, confirm_password]):
-                st.error("Please complete all required fields.")
-            elif re.search(r"\s", new_username):
-                st.error("Username must not contain spaces.")
-            elif not re.match(r"^[\w\.-]+@[\w\.-]+\.\w{2,}$", new_email):
-                st.error("Invalid email format (e.g., name@domain.com).")
-            elif new_password != confirm_password:
-                st.error("Passwords do not match.")
-            else:
-                create_account(new_email, new_password, new_username)
-
-        #st.markdown('<div class="or-divider"><span>or</span></div>', unsafe_allow_html=True)
-
-        #if st.button("Signup with Google"):
-            #st.info("Under development")
-
-st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
-st.write("Please reload if you see any errors or bugs")
+st.markdown("<div style='margin-top: 60px;'></div>", unsafe_allow_html=True)
 render_footer()

@@ -82,8 +82,8 @@ def render_footer():
         <a href="https://github.com/Suvroneel" target="_blank">GitHub</a>
         <span class="separator">|</span>
         <a href="https://github.com/Suvroneel" target="_blank">Contact</a>
-    </div>
-    <p>© 2025 <span class="project">Project Phynix</span></p>
+        
+
     
 </div>
     """, unsafe_allow_html=True)

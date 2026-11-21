@@ -7,6 +7,7 @@ faster-whisper>=0.10.0
 streamlit>=1.28.0
 streamlit-option-menu>=0.3.6
 audio-recorder-streamlit>=0.0.5
+Authlib>=1.3.2
 
 # Data & ML utilities
 numpy>=1.21.0
@@ -21,6 +22,9 @@ postgrest>=0.10.6
 # Auth
 streamlit-supabase-auth
 
-#RAG / vectordb
+# RAG / vectordb
 pinecone>=3.0.0
 sentence-transformers>=2.2.0
+
+# LLM (OpenRouter uses the OpenAI-compatible client)
+openai>=1.30.0
