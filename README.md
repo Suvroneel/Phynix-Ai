@@ -1,6 +1,23 @@
 # Phynix Ai
 
-> *The more you talk to it, the more it becomes YOURS.*
+<br>
+
+<a href="https://www.producthunt.com/products/ashva?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank">
+  <img src="https://ph-files.imgix.net/dd7b14ef-438d-4b6a-93de-3cf1752a3231.png?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=120&w=120" align="left" width="88" />
+</a>
+
+### Ashva
+An AI companion that remembers what you said
+
+<img width="1920" height="1080" alt="Phynix AI" src="https://github.com/user-attachments/assets/b75f37d6-2b68-44a7-9d44-7e42010ce526" />
+
+
+
+<a href="https://www.producthunt.com/products/ashva?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank">
+  <img src="https://img.shields.io/badge/Check%20it%20out%20on%20Product%20Hunt%20%E2%86%92-FF6154?style=for-the-badge&logo=producthunt&logoColor=white" alt="Check it out on Product Hunt" />
+</a>
+
+<br clear="left">
 
 Most AI talks at you. Phynix grows with you. It remembers how you felt last session, notices your patterns over time, and meets you where you actually are instead of starting from zero every single time.
 
@@ -14,6 +31,8 @@ This platform is **multi-page**, **multi-layered**, and production-ready, combin
 ---
 
 ## 🆕 Recent Updates
+### v2.3 - OpenRouter Backend Migration - November 2026
+Migrated Ashva's generative AI backend from the Hugging Face Inference API to OpenRouter to ensure high availability and eliminate rate-limit roadblocks. Updated the integration to support active free models (such as Baidu ERNIE 5.5 Flash, Google Gemma 4, and inclusionAI Ling 3.2 Flash) with dynamic fallback routing, zero em dashes, and robust error handling.
 
 ### v2.2 - RAG Memory Engine + pgvector - April 2026
 Ashva now actually remembers you. Not just your last emotion, but real context from both your past conversations and diary entries. Built a unified RAG pipeline using pgvector on Supabase PostgreSQL with sentence-transformers (all-MiniLM-L6-v2) for semantic embeddings. Every chat message and diary entry gets embedded and stored in a vector store. When you return, Ashva retrieves the most semantically relevant memories across both sources and uses them to generate a genuinely personal welcome, powered by the LLM. The more you talk and write, the more Ashva actually knows you. Falls back to emotion-based greeting if no embeddings exist yet, and a generic welcome for brand new users. This is what "the more you talk to it, the more it becomes YOURS" actually means under the hood.
