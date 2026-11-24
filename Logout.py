@@ -1,8 +1,12 @@
 import re
 import streamlit as st
-from Utils.auth_guard import get_supabase_service
+from Utils.auth_guard import (
+    get_supabase_anon,
+    get_supabase_service,
+    restore_supabase_session,
+)
 from Utils.footer import render_footer
-from Utils.sidebar import hide_sidebar, add_sidebar_tooltip
+from Utils.sidebar import add_sidebar_tooltip, hide_sidebar
 from Utils.title import render_main_title, render_tagline
 
 st.set_page_config(
@@ -15,6 +19,30 @@ hide_sidebar()
 add_sidebar_tooltip()
 
 supabase_service = get_supabase_service()
+supabase_auth = get_supabase_anon()
+
+
+def _get_redirect_url() -> str:
+    try:
+        auth_cfg = st.secrets.get("auth", {})
+        if auth_cfg.get("redirect_local_url"):
+            return auth_cfg["redirect_local_url"]
+    except Exception:
+        pass
+    return "https://phynix.streamlit.app"
+
+
+def _next_user_id() -> int:
+    res = (
+        supabase_service.table("user_credentials")
+        .select("user_id")
+        .order("user_id", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if res.data and res.data[0].get("user_id") is not None:
+        return int(res.data[0]["user_id"]) + 1
+    return 1
 
 
 @st.dialog("Welcome to Phynix")
@@ -37,20 +65,23 @@ def setup_username_dialog(user_email: str):
             st.error("Username cannot contain spaces.")
         else:
             try:
-                count_res = (
+                existing = (
                     supabase_service.table("user_credentials")
-                    .select("user_id", count="exact")
+                    .select("user_name")
+                    .eq("email", user_email)
                     .execute()
                 )
-                new_user_id = (count_res.count or 0) + 1
+                if existing.data:
+                    st.session_state["username"] = existing.data[0]["user_name"]
+                else:
+                    new_user_id = _next_user_id()
+                    supabase_service.table("user_credentials").insert({
+                        "user_id": new_user_id,
+                        "email": user_email,
+                        "user_name": clean_name,
+                    }).execute()
+                    st.session_state["username"] = clean_name
 
-                supabase_service.table("user_credentials").insert({
-                    "user_id": new_user_id,
-                    "email": user_email,
-                    "user_name": clean_name,
-                }).execute()
-
-                st.session_state["username"] = clean_name
                 st.session_state["user_email"] = user_email
                 st.session_state["logged_in"] = True
                 st.switch_page("pages/1_Chat.py")
@@ -58,27 +89,46 @@ def setup_username_dialog(user_email: str):
                 st.error(f"Could not create profile: {e}")
 
 
-# Handle active Google OAuth session
-if getattr(st.user, "is_logged_in", False):
-    user_email = (st.user.email or "").strip().lower()
-    if user_email:
-        st.session_state["user_email"] = user_email
-        st.session_state["logged_in"] = True
+# Handle PKCE authorization code callback from Supabase Google OAuth
+auth_code = st.query_params.get("code")
+if auth_code and not st.session_state.get("logged_in"):
+    try:
+        auth_res = supabase_auth.auth.exchange_code_for_session({"auth_code": auth_code})
+        if auth_res and auth_res.session and auth_res.user and auth_res.user.email:
+            email = auth_res.user.email.strip().lower()
+            at = auth_res.session.access_token
+            rt = auth_res.session.refresh_token
 
-        try:
-            existing = (
-                supabase_service.table("user_credentials")
-                .select("user_name")
-                .eq("email", user_email)
-                .execute()
-            )
-            if existing.data:
-                st.session_state["username"] = existing.data[0]["user_name"]
-                st.switch_page("pages/1_Chat.py")
-            else:
-                setup_username_dialog(user_email)
-        except Exception as e:
-            st.error(f"Database connection error: {e}")
+            st.session_state["access_token"] = at
+            st.session_state["refresh_token"] = rt
+            st.session_state["user_email"] = email
+            st.session_state["logged_in"] = True
+
+            st.query_params.clear()
+            st.query_params["sb_at"] = at
+            st.query_params["sb_rt"] = rt
+    except Exception as e:
+        st.error(f"Google sign-in error: {e}")
+
+# Restore existing session if already logged in
+restore_supabase_session()
+
+if st.session_state.get("logged_in") and st.session_state.get("user_email"):
+    user_email = st.session_state["user_email"]
+    try:
+        existing = (
+            supabase_service.table("user_credentials")
+            .select("user_name")
+            .eq("email", user_email)
+            .execute()
+        )
+        if existing.data:
+            st.session_state["username"] = existing.data[0]["user_name"]
+            st.switch_page("pages/1_Chat.py")
+        else:
+            setup_username_dialog(user_email)
+    except Exception as e:
+        st.error(f"Database connection error: {e}")
 
 # Header
 col1, col2 = st.columns([1, 4])
@@ -137,7 +187,20 @@ st.markdown("""
 _, center_col, _ = st.columns([1.2, 2, 1.2])
 with center_col:
     if st.button("Continue with Google", use_container_width=True):
-        st.login("google")
+        try:
+            oauth_res = supabase_auth.auth.sign_in_with_oauth({
+                "provider": "google",
+                "options": {
+                    "redirect_to": _get_redirect_url(),
+                },
+            })
+            if oauth_res and oauth_res.url:
+                st.markdown(
+                    f'<meta http-equiv="refresh" content="0;url={oauth_res.url}">',
+                    unsafe_allow_html=True,
+                )
+        except Exception as e:
+            st.error(f"Could not start Google login: {e}")
 
 st.markdown("<div style='margin-top: 60px;'></div>", unsafe_allow_html=True)
 render_footer()
