@@ -47,12 +47,38 @@ Replaced fixed replies with live, context-aware responses.
 ## Pages
 
 | Page | What it does |
-|---|---|
-| **Login** | Sign in with Google and pick a display name |
-| **Chat** | Talk to Ashva, with emotion and risk analysis on every message |
-| **Home** | Daily advice, Ashva Insights, and your mood dashboard |
-| **Ashva Diaries** | Private journal, profile, bio, and settings |
+## Pages
 
+### Login
+
+Sign in with Google and pick a display name to get started.
+
+![Login](Site%20Images/Login.png)
+
+---
+
+### Chat
+
+Talk to Ashva. Every message gets an emotion and risk analysis, and replies are shaped by how you are feeling.
+
+![Chat](https://github.com/Suvroneel/Phynix-GenAI-Platform/blob/Suvroneel-patch-1/Site%20Images/Phynix_Genai_Chat.png?raw=true)
+
+---
+
+### Home
+
+Your daily advice, Ashva Insights, and a mood dashboard showing confidence, risk, and emotion trends.
+
+![Home1](Site%20Images/Home_1.png)
+![Home2](Site%20Images/Home_2.png)
+
+---
+
+### Ashva Diaries
+
+A private journal with optional photos, plus your profile, bio, and settings.
+
+![Mood Journal](https://github.com/Suvroneel/Phynix-GenAI-Platform/blob/Suvroneel-patch-1/Site%20Images/Ashva_diary.png)
 ---
 
 ## Features
