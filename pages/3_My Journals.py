@@ -5,9 +5,9 @@ import uuid
 import streamlit as st
 from Utils.auth_guard import require_google_auth, get_supabase_service
 from Utils.journal import fetch_today_entries, insert_entry, upload_image
-from Utils.profile import prof_change, update_profile, profile_name, show_bio
+from Utils.profile import prof_change, profile_name
 from Utils.sidebar import render_sidebar_logo
-from Utils.title import render_custom_header, render_custom_subheader, render_custom_header2
+from Utils.title import render_custom_header2, render_custom_subheader
 from Utils.ashva import ashva_diary
 from Utils.memory import upsert_memory
 
@@ -43,6 +43,9 @@ st.markdown("""
 # Custom CSS
 st.markdown("""
     <style>
+    .block-container {
+        padding-top: 2rem !important;
+    }
     .stImage > img {
         max-width: 100%;
         max-height: 400px;
@@ -53,6 +56,10 @@ st.markdown("""
         display: block;
         margin-left: auto;
         margin-right: auto;
+    }
+    .custom-welcome {
+        margin-bottom: 0 !important;
+        line-height: 1.15 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -69,22 +76,32 @@ if "journal_input_key" not in st.session_state:
 if "show_entries" not in st.session_state:
     st.session_state.show_entries = True
 
-# Profile display
-col1, col2 = st.columns([4, 1])
-with col1:
-    st.image(st.session_state.profile_image, width=200)
+# Page title & subheader
+st.markdown(
+    "<h1 style='font-family:\"Montserrat\"; font-size: 42px; margin-bottom: 4px;'>My Journals</h1>",
+    unsafe_allow_html=True,
+)
+render_custom_subheader("Some thoughts don't need an answer.")
+
+# Space between subheader and profile block
+st.markdown("<div style='margin-top: 26px;'></div>", unsafe_allow_html=True)
+
+# Profile picture
+st.image(st.session_state.profile_image, width=200)
+st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
+
+# Username row with Edit Profile right beside it
+name_col, edit_col = st.columns([4, 1], vertical_alignment="center")
+with name_col:
     profile_name(st.session_state["username"])
-    badge = st.badge("Verified ✔", color="green")
-with col2:
-    if st.button("Edit Profile", icon=":material/draw:"):
+with edit_col:
+    if st.button("Edit Profile", icon=":material/draw:", key="edit_profile_btn", use_container_width=True):
         prof_change()
 
-st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-show_bio(user_name=st.session_state["username"])
-st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 6px;'></div>", unsafe_allow_html=True)
+badge = st.badge("Verified ✔", color="green")
 
-if st.button("Update bio", icon=":material/draw:"):
-    update_profile(st.session_state["username"])
+st.markdown("<div style='margin-top: 22px;'></div>", unsafe_allow_html=True)
 
 entry_text = st.text_area(
     "entry",
@@ -103,7 +120,7 @@ uploaded_file = st.file_uploader(
 
 colA, colB = st.columns([4, 1])
 with colB:
-    if st.button("Upload", icon=":material/draw:", key="upload_btn"):
+    if st.button("Upload", icon=":material/draw:", key="upload_btn", use_container_width=True):
         if entry_text.strip():
             image_url = (
                 upload_image(st.session_state["username"], uploaded_file)
@@ -169,15 +186,3 @@ if st.session_state.show_entries:
                 {image_html}
             </div>
         """, unsafe_allow_html=True)
-
-st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
-render_custom_header("Settings")
-
-col1, col2 = st.columns([4, 1])
-with col1:
-    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-    render_custom_subheader("Logout of all sessions")
-with col2:
-    if st.button("Logout", type="tertiary", icon=":material/logout:"):
-        st.session_state.clear()
-        st.logout()
