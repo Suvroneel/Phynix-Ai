@@ -78,69 +78,43 @@ The platform emphasises **personalisation, privacy, and genuine contextual aware
 ## 📁 Project Structure
 ```
 Phynix-Mental-Health-Chatbot/
-├── Logout.py                        # Main entry point & authentication
+├── Logout.py                        # App entry point & native Google OAuth onboarding
 ├── requirements.txt                 # Python dependencies
-├── Dockerfile                       # Docker configuration
-├── README.md                        # Documentation
-├── .gitignore                       # Git ignore rules
-├── .gitattributes                   # Git attributes
-├── history.png                      # Project history image
+├── Dockerfile                       # Container configuration (Python 3.10-slim)
+├── README.md                        # Project documentation
 │
-├── pages/                           # Streamlit pages
-│   ├── 1_Chat.py                   # Chat interface with Ashva
-│   ├── 2_Home.py                   # Analytics dashboard
-│   └── 3_Mood Journal.py           # Mood journaling
+├── pages/                           # Streamlit multi-page views
+│   ├── 1_Chat.py                    # Conversational interface with Ashva + model selector
+│   ├── 2_Home.py                    # Mental metrics dashboard, emotion charts & daily advice
+│   └── 3_Ashva Diaries.py           # Private daily mood journal with image uploads & profile settings
 │
-├── Utils/                           # Core utilities
-│   ├── ashva.py                    # AI orchestration
-│   ├── model.py                    # BERT emotion classification
-│   ├── gen_ai.py                   # Generative AI integration
-│   ├── database.py                 # Database operations
-│   ├── config.py                   # Configuration
-│   ├── reply.py                    # Response generation
-│   ├── emotion_responses.py        # Emotion templates
-│   ├── advice.py                   # Advice generation
-│   ├── personality.py              # AI personality
-│   ├── profile.py                  # User profiles
-│   ├── Progression_Chart.py        # Analytics charts
-│   ├── sidebar.py                  # Sidebar components
-│   ├── footer.py                   # Footer components
-│   ├── title.py                    # Title utilities
-│   ├── Website_Title.py            # Title config
-│   ├── Otp_verification.py         # OTP system
-│   ├── Automated_Messages.py       # Auto messages
-│   ├── feedback.py                 # Feedback system
-│   ├── journal.py                  # Mood journal logic
-│   └── __init__.py
+├── Utils/                           # Core application modules
+│   ├── auth_guard.py                # Google OAuth session enforcement & Supabase service client
+│   ├── ashva.py                     # RAG-powered welcome engine & Ashva Insights logic
+│   ├── model.py                     # Fine-tuned BERT emotion classification inference
+│   ├── gen_ai.py                    # OpenRouter LLM client, model routing & fallback chain
+│   ├── memory.py                    # Embedding generation (all-MiniLM-L6-v2) & pgvector upsert/RPC
+│   ├── journal.py                   # Diary CRUD operations & Supabase Storage image uploads
+│   ├── emotion_responses.py         # Emotion-to-risk mapping & fallback templates
+│   ├── Progression_Chart.py         # Altair analytics charts & mental health metric calculations
+│   ├── profile.py                   # User avatar selector & bio management
+│   ├── advice.py                    # Daily motivational quotes
+│   ├── sidebar.py                   # Sidebar branding & navigation helpers
+│   ├── title.py                     # Dynamic time-aware greetings & headers
+│   ├── footer.py                    # App footer
+│   ├── feedback.py                  # User rating & review system
+│   └── config.py                    # Streamlit page configuration & log suppression
 │
-├── auth/                            # Authentication
-│   └── google_login_migration/
-│       ├── Logout.py
-│       └── README.md
-│
-├── SQL/                             # Database schemas
+├── SQL/                             # Database schema & sample rows
 │   └── user_data_rows.sql
 │
-├── Functions/                       # Helper functions
-│   └── title.py
+├── auth/                            # Authentication migration utilities
+│   └── google_login_migration/
 │
-├── images/                          # Static assets
-│   ├── default.png
-│   ├── logo-black&white.png
-│   ├── sigmund-ljJDx95-6gE-unsplash.png
-│   ├── icons/                      # Favicons
-│   └── profiles/                   # Profile avatars
-│
-├── Lottie/                          # Animations
-│   └── Animation - 1750949119838.json
-│
-├── favicon_io/                      # Favicon files
-│
-├── Site Images/                     # Screenshots
-│
-├── Old versions/                    # Legacy code
-│
-└── .idea/                           # IDE config
+├── images/                          # Static assets, icons & profile avatars
+├── Lottie/                          # UI animations
+├── favicon_io/                      # Web manifests & favicons
+└── Site Images/                     # Application screenshots
 ```
 
 ---
