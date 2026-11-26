@@ -27,6 +27,8 @@ Phynix is an end-to-end, mood-aware GenAI platform. The heart of it is **Ashva**
 
 ## Recent Updates
 
+### v2.5 - Memory Management (Beta)
+A new page where you can see how many memories Ashva holds and clean up old ones, so replies stay sharp.
 ### v2.4 - Google Sign-In
 Login now uses Google sign-in, so there is no password to remember.
 
