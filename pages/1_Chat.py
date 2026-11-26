@@ -257,12 +257,19 @@ if prompt:
                 "email": user_email,
             }).execute()
 
-        count_response = (
+        max_id_response = (
             supabase.table("user_data")
-            .select("index", count="exact")
+            .select("index")
+            .order("index", desc=True)
+            .limit(1)
             .execute()
         )
-        next_id = (count_response.count or 0) + 1
+        max_existing_id = (
+            max_id_response.data[0]["index"]
+            if max_id_response.data and max_id_response.data[0].get("index") is not None
+            else 0
+        )
+        next_id = int(max_existing_id) + 1
 
         supabase.table("user_data").insert({
             "index": next_id,

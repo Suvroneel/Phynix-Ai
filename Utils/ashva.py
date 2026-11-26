@@ -1,12 +1,9 @@
-import streamlit as st
-from supabase import create_client, Client
-import os
-from supabase import create_client, Client
-import os
-
-import random
-import streamlit.components.v1 as components
 import base64
+import logging
+import random
+import streamlit as st
+import streamlit.components.v1 as components
+from Utils.auth_guard import get_supabase_service
 
 
 def get_base64_image(image_path):
@@ -139,12 +136,14 @@ ashva_diary = [
     "Nothing here yet. When you're ready, say something that feels true.",
 ]
 
-def journal():
 
+def journal():
     st.markdown(f" {random.choice(ashva_diary)}")
 
 
 def ashva_insights(username: str, email: str):
+    supabase = get_supabase_service()
+
     st.markdown("""
         <style>
             .ashva-tagline {
@@ -156,8 +155,6 @@ def ashva_insights(username: str, email: str):
                 font-family: 'Inter', sans-serif;
                 text-align: left;
             }
-
-            
 
             .ashva-highlight {
                 font-size: 21px;
@@ -173,13 +170,9 @@ def ashva_insights(username: str, email: str):
         <div class="ashva-tagline">Context-aware insights from your recent activity.</div>
     """, unsafe_allow_html=True)
 
-    # Define mapping outside this function in global scope
-    # ashva_guidance = {...}
-
     default_msg = "Take a moment for yourself today. Your emotional well-being matters."
 
     try:
-        # Fetch latest emotion from Supabase
         response = supabase.table("user_data") \
             .select("predicted_emotion") \
             .eq("user_name", username) \
@@ -189,29 +182,19 @@ def ashva_insights(username: str, email: str):
             .execute()
 
         if response.data and len(response.data) > 0:
-            last_emotion = response.data[0]['predicted_emotion'].lower()
-
+            last_emotion = response.data[0]["predicted_emotion"].lower()
             insight = random.choice(ashva_guidance.get(last_emotion, [default_msg]))
         else:
-
             insight = "We couldn't detect a recent emotional check-in."
 
     except Exception as e:
-
         insight = default_msg
         print("Ashva Insight Error:", e)
 
-    # Render content
     st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
     st.markdown(f"""
-       
         <div class="ashva-highlight">{insight}</div>
     """, unsafe_allow_html=True)
-
-
-supabase_url = st.secrets['SUPABASE_URL']
-supabase_key = st.secrets['SUPABASE_KEY']
-supabase: Client = create_client(supabase_url, supabase_key)
 
 
 # -------------------------For Chat Section----------------------------------- Mainpart
@@ -219,13 +202,11 @@ supabase: Client = create_client(supabase_url, supabase_key)
 def display_welcome_message(username: str, email: str):
     from Utils.memory import retrieve_memories
     from Utils.gen_ai import PhynixAI
-    import time
+
+    supabase = get_supabase_service()
 
     with st.spinner("Processing your request..."):
         try:
-            if "access_token" in st.session_state and "refresh_token" in st.session_state:
-                supabase.auth.set_session(st.session_state["access_token"], st.session_state["refresh_token"])
-
             clean_email = email.strip().lower()
             clean_username = username.strip().lower()
 
@@ -266,14 +247,13 @@ def display_welcome_message(username: str, email: str):
                     .execute()
 
                 if emotion_response.data:
-                    emotion = emotion_response.data[0]['predicted_emotion'].lower()
+                    emotion = emotion_response.data[0]["predicted_emotion"].lower()
                     message = random.choice(return_user_emotion_messages.get(emotion, ["What's going on your mind?"]))
                 else:
                     # Condition 3: Brand new user, generic
                     message = "Hey, welcome back! What's been going on with you lately? 😊"
 
         except Exception as e:
-            import logging
             logging.error(f"RAG welcome error: {str(e)}")
             message = "Hey, welcome back! What's on your mind today? 😊"
 
@@ -315,5 +295,4 @@ def display_welcome_message(username: str, email: str):
         """
         components.html(html_code, height=160)
     except Exception as e:
-        import logging
         logging.error(f"Welcome render error: {str(e)}")

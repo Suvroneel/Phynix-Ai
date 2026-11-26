@@ -1,18 +1,11 @@
-import streamlit as st
-
-import pandas as pd
-import numpy as np
-
-from supabase import create_client, Client, ClientOptions
-
-from Utils.title import render_custom_subheader
+from datetime import datetime
 import altair as alt
-# Initialize Supabase (move this to global init if needed)
-supabase_url = st.secrets['SUPABASE_URL']
-supabase_key = st.secrets['SUPABASE_KEY']
-supabase: Client = create_client(supabase_url, supabase_key, options=ClientOptions(postgrest_client_timeout=60))
-
+import numpy as np
+import pandas as pd
 import plotly.express as px
+import streamlit as st
+from Utils.auth_guard import get_supabase_service
+from Utils.title import render_custom_subheader
 
 
 def render__status(header_text):
@@ -33,9 +26,9 @@ def render__status(header_text):
     st.markdown(f'<div class="status">{header_text}</div>', unsafe_allow_html=True)
 
 
-
-#risks
+# risks
 def show_last_chat_metrics(user_name: str):
+    supabase = get_supabase_service()
     render_custom_subheader("Mental Metrics Summary")
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
     response = supabase.table("user_data") \
@@ -71,8 +64,6 @@ def show_last_chat_metrics(user_name: str):
 
     current_mental = min(100, (current_confidence + (100 - current_risk) / 2))
     prev_mental = min(100, (prev_confidence + (100 - prev_risk) / 2))
-
-
 
     def inline_percent_change(current, previous):
         try:
@@ -114,29 +105,11 @@ def show_last_chat_metrics(user_name: str):
     )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def session_progress(user_name: str):
+    supabase = get_supabase_service()
     st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
     render_custom_subheader("Emotion Snapshot – Today")
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-
-    import pandas as pd
-    import altair as alt
-    from datetime import datetime
 
     today = datetime.now().date()
 
@@ -217,6 +190,7 @@ def session_progress(user_name: str):
 
 
 def session_progress2(user_name: str):
+    supabase = get_supabase_service()
     st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
     render_custom_subheader("Emotion Progress")
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
@@ -294,12 +268,3 @@ def session_progress2(user_name: str):
         f"<p style='font-weight: 500; font-size: 20px;'>Status: <span style='color:{color};'>{status}</span></p>",
         unsafe_allow_html=True
     )
-
-
-
-
-
-
-
-
-
