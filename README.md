@@ -29,6 +29,7 @@ Phynix is an end-to-end, mood-aware GenAI platform. The heart of it is **Ashva**
 
 ### v2.5 - Memory Management (Beta)
 A new page where you can see how many memories Ashva holds and clean up old ones, so replies stay sharp.
+
 ### v2.4 - Google Sign-In
 Login now uses Google sign-in, so there is no password to remember.
 
@@ -46,9 +47,6 @@ Replaced fixed replies with live, context-aware responses.
 
 ---
 
-## Pages
-
-| Page | What it does |
 ## Pages
 
 ### Login
@@ -76,11 +74,18 @@ Your daily advice, Ashva Insights, and a mood dashboard showing confidence, risk
 
 ---
 
-### Ashva Diaries
+### My Journals
 
-A private journal with optional photos, plus your profile, bio, and settings.
+A private journal with optional photos, plus your profile picture and name.
 
 ![Mood Journal](https://github.com/Suvroneel/Phynix-GenAI-Platform/blob/Suvroneel-patch-1/Site%20Images/Ashva_diary.png)
+
+---
+
+### Memory Plans
+
+See how many memories Ashva is holding, clean up old ones (Beta), and log out of all sessions.
+
 ---
 
 ## Features
@@ -88,6 +93,7 @@ A private journal with optional photos, plus your profile, bio, and settings.
 - **Emotion detection:** a fine-tuned model classifies each message into 7 emotions (joy, sadness, anger, fear, surprise, disgust, neutral)
 - **Empathetic replies:** responses shaped by how you are feeling
 - **Memory:** Ashva recalls what you shared before, from both chats and diary entries
+- **Memory management:** see your memory count and clean up old memories
 - **Mood dashboard:** confidence, risk, and emotion trends over time
 - **Private journal:** write freely, attach a photo, no mood tagging or judgment
 - **Daily advice:** a short quote each day
@@ -99,7 +105,7 @@ A private journal with optional photos, plus your profile, bio, and settings.
 ```
 Phynix-Ai/
 ├── Logout.py        Entry point and login
-├── pages/           Chat, Home, Ashva Diaries
+├── pages/           Chat, Home, My Journals, Memory Plans
 ├── Utils/           Shared app logic
 ├── images/          Static assets
 ├── Dockerfile
